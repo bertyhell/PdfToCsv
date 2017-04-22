@@ -75,6 +75,19 @@ namespace PdfToCsv
                 }
             }
 
+            // Remove lists that span more than 100 wordblocks
+            keys = metaHistogram.Keys.ToArray();
+            for (var i = keys.Length - 1; i >= 0; i--)
+            {
+                List<string> words = metaHistogram[keys[i]].Words;
+                int firstWordIndex = histogram[words[0]][0];
+                int lastWordIndex  = histogram[words[words.Count - 1]][0];
+                if (lastWordIndex - firstWordIndex > 100)
+                {
+                    metaHistogram.Remove(keys[i]);
+                }
+            }
+
             List<KeyValuePair<int, WordPattern>> metaHistogramSorted = (from metaHistoryEntry in metaHistogram orderby metaHistoryEntry.Key * metaHistoryEntry.Value.NumOfOccurences descending select metaHistoryEntry).ToList();
 
             List<List<List<string>>> AllWordBlocks = new List<List<List<string>>>();
@@ -92,21 +105,24 @@ namespace PdfToCsv
                 List<List<string>> wordBlocks = new List<List<string>>();
                 for (int patternIndex = 0; patternIndex < wordInces[0].Count; patternIndex++)
                 {
-                    int lastBlockIndex = -1;
                     List<string> wordBlock = new List<string>();
                     // Run over each text block between the first best word idex and the last best word index
-                    for (int WordBlockIndex = 0; WordBlockIndex < wordInces.Count; WordBlockIndex++)
+                    int firstBlockIndex = wordInces[0][patternIndex];
+                    int lastBlockIndex = wordInces[wordInces.Count - 1][patternIndex];
+
+                    for (int wordBlockIndex = firstBlockIndex; wordBlockIndex < lastBlockIndex; wordBlockIndex++)
                     {
-                        int blockIndex = wordInces[WordBlockIndex][patternIndex];
-                        if (lastBlockIndex != blockIndex)
-                        {
-                            wordBlock.Add(blocks[blockIndex]);
-                            lastBlockIndex = blockIndex;
-                        }
+                        wordBlock.Add(blocks[wordBlockIndex]);
                     }
-                    wordBlocks.Add(wordBlock);
+                    if (wordBlock.Count > 0)
+                    {
+                        wordBlocks.Add(wordBlock);
+                    }
                 }
-                AllWordBlocks.Add(wordBlocks);
+                if (wordBlocks.Count > 0)
+                {
+                    AllWordBlocks.Add(wordBlocks);
+                }
             }
             return AllWordBlocks;
         }
