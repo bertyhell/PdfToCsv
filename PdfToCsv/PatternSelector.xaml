@@ -1,0 +1,41 @@
+﻿<Window x:Class="PdfToCsv.PatternSelector"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PdfToCsv"
+        mc:Ignorable="d"
+        Title="PatternSelector" Height="500" Width="700" WindowStartupLocation="CenterScreen" WindowState="Maximized" Icon="icon.ico">
+    <Grid Margin="10">
+        <Grid.Resources>
+            <Style TargetType="ListBoxItem">
+                <Setter Property="Background" Value="White" />
+            </Style>
+            <Style TargetType="ListBox">
+                <Setter Property="Background" Value="#FFEAEAEA" />
+            </Style>
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="189*"/>
+            <ColumnDefinition Width="103*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="206*"/>
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+
+        <ListView x:Name="patternListView" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2" Margin="0,0,0,5" Grid.Row="1" SelectedIndex="{Binding SelectedpatternIndex, Mode=TwoWay}" SelectionMode="Single" ScrollViewer.CanContentScroll="False">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Rows" Width="120" DisplayMemberBinding="{Binding NumberOfRows}" />
+                    <GridViewColumn Header="First Row" DisplayMemberBinding="{Binding FirstRow}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <TextBlock HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="Detected patterns:" VerticalAlignment="Center" Margin="10,0,0,0" Grid.ColumnSpan="2"/>
+        <Button x:Name="ChoosePatternButton" Grid.Row="2" Grid.Column="1" Click="ChoosePatternButton_Click">
+            <TextBlock TextWrapping="Wrap" Text="Export Selected"/>
+        </Button>
+    </Grid>
+</Window>
