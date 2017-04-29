@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26403.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfToCsv", "PdfToCsv\PdfToCsv.csproj", "{068B7E1A-D52D-4589-85EA-4A43C21E6ED8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfToCsvTests", "PdfToCsvTests\PdfToCsvTests.csproj", "{27D62F5B-0283-42FA-857A-80AAC8DF2AD1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{068B7E1A-D52D-4589-85EA-4A43C21E6ED8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{068B7E1A-D52D-4589-85EA-4A43C21E6ED8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{068B7E1A-D52D-4589-85EA-4A43C21E6ED8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27D62F5B-0283-42FA-857A-80AAC8DF2AD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27D62F5B-0283-42FA-857A-80AAC8DF2AD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27D62F5B-0283-42FA-857A-80AAC8DF2AD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27D62F5B-0283-42FA-857A-80AAC8DF2AD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
