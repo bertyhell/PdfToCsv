@@ -48,6 +48,7 @@ namespace PdfToCsv
 
             //Append the current text to our line buffer
             this.result.Append(renderInfo.GetText());
+            Console.WriteLine(renderInfo.GetText());
 
             //Reset the last used line
             this.lastBaseLine = curBaseline;
@@ -66,8 +67,14 @@ namespace PdfToCsv
         }
 
         //Not needed, part of interface contract
-        public void BeginTextBlock() { }
-        public void EndTextBlock() { }
+        public void BeginTextBlock()
+        {
+            Console.WriteLine("+++");
+
+        }
+        public void EndTextBlock() {
+            Console.WriteLine("---");
+        }
         public void RenderImage(ImageRenderInfo renderInfo) { }
     }
 }

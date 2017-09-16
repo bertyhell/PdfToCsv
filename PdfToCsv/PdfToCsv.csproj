@@ -62,6 +62,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="GeneticCell.cs" />
+    <Compile Include="GeneticRow.cs" />
+    <Compile Include="GeneticRowOptimizer.cs" />
+    <Compile Include="GeneticSpecimen.cs" />
     <Compile Include="LevenshteinDistance.cs" />
     <Compile Include="PatternSelector.xaml.cs">
       <DependentUpon>PatternSelector.xaml</DependentUpon>
