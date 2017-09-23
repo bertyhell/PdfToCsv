@@ -6,14 +6,17 @@ namespace PdfToCsv
 {
     public static class GeneticRowOptimizer
     {
-        private static readonly int NUMBER_OF_SPECIMEN_TO_BREED = 1000;             // Should be multiple of "allowed to breed" number
-        private static readonly int NUMBER_OF_SPECIMEN_ALLOWED_TO_BREED = 500;      // Should be multipe of 2
-        private static readonly int NUMBER_OF_GENERATIONS_AFTER_NO_PROGRESS = 100;
-        private static readonly double ROW_MUTATION_CHANCE = 1;                     // 70% of the rows will mutate
-        private static readonly double ROW_MUTATION_SEVERITY = 1;                   // 70% of the row column seperators will change position
+        private static readonly int NUMBER_OF_SPECIMEN_TO_BREED = 200;             // Should be multiple of "allowed to breed" number
+        private static readonly int NUMBER_OF_SPECIMEN_ALLOWED_TO_BREED = 20;      // Should be multipe of 2
+        private static readonly int NUMBER_OF_GENERATIONS_AFTER_NO_PROGRESS = 300;
+        private static readonly double ROW_MUTATION_CHANCE = 0.3;                   // 70% of the rows will mutate
+        private static readonly double ROW_MUTATION_SEVERITY = 0.7;                 // 70% of the row column seperators will change position
         private static readonly double NUM_OF_CHAR_MULTIPLIER = 1;                  // relative penalty for using various characters
         private static readonly double NUM_OF_CHAR_REUSED_MULTIPLIER = 1;           // relative penalty for not reusing the same characters
         private static readonly double CHAR_GROUP_USE_MULTIPLIER = 5;               // relative penalty for using multiple character groups
+        private static readonly double RARE_CHARACTERS_USED_MULTIPLIER = 1;         // relative penalty for using a character only a few times
+        private static readonly double RARE_CHARACTERS_TRESHOLD = 1.0;              // number of standard deviations the char frequency has to be below average before getting this bonus
+        private static readonly double SAME_LENGTH_BONUS = 2;                       // Bonus for columns that have the same length for all rows
         private static readonly Random rand = new Random();
 
         private static readonly Dictionary<string, GeneticCell> _cachedGeneticCells = new Dictionary<string, GeneticCell>();
@@ -65,7 +68,8 @@ namespace PdfToCsv
                 if (Math.Abs(score - lastBestScore) < 0.00000001)
                 {
                     generationsToGo--;
-                } else
+                }
+                else
                 {
                     generationsToGo = NUMBER_OF_GENERATIONS_AFTER_NO_PROGRESS;
                 }
@@ -102,26 +106,37 @@ namespace PdfToCsv
             while (offspringSolutions.Count < NUMBER_OF_SPECIMEN_TO_BREED)
             {
                 // Randomize the order of the breed solutions, so they breed with different partners every time
-                breeders.OrderBy(x => rand.Next()).ToList();
+                //breeders.OrderBy(x => rand.Next()).ToList();
+
+                // Pick 2 breeders to breed together, but make the ones with higher scores more likely to be picked
+                int correctedIndex1;
+                int correctedIndex2;
+                double randomIndex;
+                randomIndex = rand.NextDouble() * (NUMBER_OF_SPECIMEN_ALLOWED_TO_BREED);
+                correctedIndex1 = (int)Math.Floor(randomIndex * randomIndex / (NUMBER_OF_SPECIMEN_ALLOWED_TO_BREED));
+                do
+                {
+                    randomIndex = rand.NextDouble() * NUMBER_OF_SPECIMEN_ALLOWED_TO_BREED;
+                    correctedIndex2 = (int)Math.Floor(randomIndex * randomIndex / (NUMBER_OF_SPECIMEN_ALLOWED_TO_BREED));
+                } while (correctedIndex1 == correctedIndex2);
 
                 // Breed new solutions by combining the best solutions from the previous generation
-                for (int i = 0; i < breeders.Count; i += 2)
-                {
-                    double crossOverRatio = rand.NextDouble();
-                    int crossOverRowIndex = (int)Math.Floor(numberOfRows * crossOverRatio);
-                    // A1 + B2
-                    // B1 + A2
-                    var solutionA = breeders[i].Rows;
-                    var solutionB = breeders[i + 1].Rows;
+                double crossOverRatio = rand.NextDouble();
+                int crossOverRowIndex = (int)Math.Floor(numberOfRows * crossOverRatio);
+                // A1 + B2
+                // B1 + A2
+                var solutionA = breeders[correctedIndex1].Rows;
+                var solutionB = breeders[correctedIndex2].Rows;
 
-                    var solutionA1 = solutionA.GetRange(0, crossOverRowIndex);
-                    var solutionA2 = solutionA.GetRange(crossOverRowIndex, numberOfRows - crossOverRowIndex - 1);
-                    var solutionB1 = solutionB.GetRange(0, crossOverRowIndex);
-                    var solutionB2 = solutionB.GetRange(crossOverRowIndex, numberOfRows - crossOverRowIndex - 1);
+                var solutionA1 = solutionA.GetRange(0, crossOverRowIndex);
+                var solutionA2 = solutionA.GetRange(crossOverRowIndex, numberOfRows - crossOverRowIndex - 1);
+                var solutionB1 = solutionB.GetRange(0, crossOverRowIndex);
+                var solutionB2 = solutionB.GetRange(crossOverRowIndex, numberOfRows - crossOverRowIndex - 1);
 
-                    offspringSolutions.Add(new GeneticSpecimen(solutionA1.Concat(solutionB2).ToList()));
-                    offspringSolutions.Add(new GeneticSpecimen(solutionB1.Concat(solutionA2).ToList()));
-                }
+                var mutant1 = new GeneticSpecimen(solutionA1.Concat(solutionB2).ToList());
+                var mutant2 = new GeneticSpecimen(solutionB1.Concat(solutionA2).ToList());
+                offspringSolutions.Add(mutant1);
+                offspringSolutions.Add(mutant2);
             }
             foreach (GeneticSpecimen solution in offspringSolutions)
             {
@@ -132,7 +147,7 @@ namespace PdfToCsv
                         row.Mutate(ROW_MUTATION_SEVERITY);
                     }
                 }
-                
+
             }
             return offspringSolutions;
         }
@@ -158,14 +173,31 @@ namespace PdfToCsv
             double totalScore = 0;
             for (int column = 0; column < shortestRowLength; column++)
             {
-                Dictionary<char, int> columnCharFrequency = new Dictionary<char, int>();
+                Dictionary<char, int> columnCharFrequencies = new Dictionary<char, int>();
                 List<string> columnCellValues = new List<string>();
                 foreach (GeneticRow row in rows)
                 {
                     GeneticCell cell = row.GetMergedCellByIndex(column);
-                    columnCharFrequency = GeneticCell.CombineCharacterFrequencies(cell.CharacterFrequency, columnCharFrequency);
+                    columnCharFrequencies = GeneticCell.CombineCharacterFrequencies(cell.CharacterFrequency, columnCharFrequencies);
                     columnCellValues.Add(cell.Content);
                 }
+
+                // Give a bonus for characters that are almost not used anymore so the evolutionary algorithm gets an incentive the push these out of existiance
+                double rareCharFrequencyBonus = 0;
+                double averageCharFreq = columnCharFrequencies.Values.Average();
+                double stdDiv = CalculateStdDev(columnCharFrequencies.Values, averageCharFreq);
+                foreach (KeyValuePair<char, int> charFreq in columnCharFrequencies) // TODO relate this to the character frequency in the general pdf => Q used less in english than in french...
+                {
+                    double treshold = averageCharFreq - stdDiv * RARE_CHARACTERS_TRESHOLD;
+                    if (charFreq.Value < treshold)
+                    {
+                        // Give the column a bonus if its rarly used characters are getting more and more rare => hopefully they will stop being used all together
+                        rareCharFrequencyBonus += RARE_CHARACTERS_USED_MULTIPLIER * (1 - charFreq.Value / treshold); // explanatory graph: https://github.com/bertyhell/PdfToCsv/blob/genetic-column-optimizer/rare-char-usage.jpg
+                    }
+                }
+
+                // Give a bonus if all cells in the column have the same length
+                double samelLenthBonus = columnCellValues.All(c => c.Length == columnCellValues[0].Length) ? SAME_LENGTH_BONUS : 1;
 
                 //// TODO see if promoting columns with identical strings is good or bad (fear of getting stuck in local optima
                 //// TODO same thing with identical length in the whole column
@@ -173,15 +205,22 @@ namespace PdfToCsv
                 //}
 
                 // Give a score to this column based on the columnCharFrequency
-                // - The less characters are used the better
+                // - The less characters used, the better
                 // - The more times the same character is used, the better
-                // - The less characters from different groups used is better
+                // - The less character groups that are used, the better
 
                 // TODO keys length normalize by dividing be average column content length?
                 double score =
-                    1.0 / columnCharFrequency.Keys.Count * NUM_OF_CHAR_MULTIPLIER *                                                     // - The less characters are used the better
-                    columnCharFrequency.Values.Sum() / columnCharFrequency.Keys.Count / rows.Count * NUM_OF_CHAR_REUSED_MULTIPLIER *    // - The more times the same character is used, the better
-                    GetCharGroupUseScore(columnCharFrequency) * CHAR_GROUP_USE_MULTIPLIER;                                              // - The less characters from different groups used is better
+                    // - The less characters are used the better
+                    1.0 / columnCharFrequencies.Keys.Count * NUM_OF_CHAR_MULTIPLIER *
+                    // - The more times the same character is used, the better
+                    columnCharFrequencies.Values.Sum() / columnCharFrequencies.Keys.Count / rows.Count * NUM_OF_CHAR_REUSED_MULTIPLIER *
+                    // - The less character groups used, is better
+                    GetCharGroupUseScore(columnCharFrequencies) * CHAR_GROUP_USE_MULTIPLIER *
+                    // - Reward columns that have characters that are almost not used anymore => trying to add an incentive towards: The less character groups used, is better 
+                    rareCharFrequencyBonus *
+                    // Columns where all the cells have the same length get a bonus
+                    SAME_LENGTH_BONUS;
 
                 totalScore += score;
             }
@@ -198,7 +237,8 @@ namespace PdfToCsv
                 if (goupsWithMultipleMembers.Contains(character))
                 {
                     score += 10; // Penalty for using an extra alphanumeric group: 10
-                } else
+                }
+                else
                 {
                     score += 1; // Penalty for using an extra symbol: 1
                 }
@@ -211,7 +251,8 @@ namespace PdfToCsv
             if (_cachedGeneticCells.ContainsKey(content))
             {
                 return _cachedGeneticCells[content];
-            } else
+            }
+            else
             {
                 return new GeneticCell(content);
             }
@@ -345,6 +386,35 @@ namespace PdfToCsv
                 }
             }
             return textFreqByGroup;
+        }
+
+        /// <summary>
+        /// Calculates the statistical standard deviation for a list of numbers
+        /// </summary>
+        /// <param name="values">The list of numbers</param>
+        /// <param name="average">Optional average of the list of numbers if already available (efficientcy++)</param>
+        /// <returns>The standard deviation for the list of numbers</returns>
+        private static double CalculateStdDev(IEnumerable<int> values, double? average)
+        {
+            double stdDev = 0;
+            if (values.Count() > 0)
+            {
+                // Compute the Average   
+                double avg;
+                if (average.HasValue)
+                {
+                    avg = average.Value;
+                }
+                else
+                {
+                    avg = values.Average();
+                }
+                // Perform the Sum of (value-avg)_2_2      
+                double sum = values.Sum(d => Math.Pow(d - avg, 2));
+                // Put it all together      
+                stdDev = Math.Sqrt((sum) / (values.Count() - 1));
+            }
+            return stdDev;
         }
     }
 }

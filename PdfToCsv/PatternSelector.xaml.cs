@@ -44,8 +44,8 @@ namespace PdfToCsv
 
         private void ChoosePatternButton_Click(object sender, RoutedEventArgs e)
         {
-            // List<List<string>> optimisedWordBlocks = GeneticRowOptimizer.OptimizeRows(allWordBlocks[SelectedpatternIndex]);
-            List<List<string>> optimisedWordBlocks = allWordBlocks[SelectedpatternIndex];
+            List<List<string>> optimisedWordBlocks = GeneticRowOptimizer.OptimizeRows(allWordBlocks[SelectedpatternIndex]);
+            //List<List<string>> optimisedWordBlocks = allWordBlocks[SelectedpatternIndex];
 
             StringBuilder csvContent = new StringBuilder();
             foreach (List<string> wordBlocks in optimisedWordBlocks)
